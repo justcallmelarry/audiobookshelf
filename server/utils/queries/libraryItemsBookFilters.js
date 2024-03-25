@@ -750,12 +750,10 @@ module.exports = {
         })
         if (bookIndex === -1) {
           // no later books than maxSequence
-          Logger.debug(s.name + " no book")
           return null
         }
       }
       
-      Logger.debug(s.name + " " + bookIndex)
       const libraryItem = s.bookSeries[bookIndex].book.libraryItem.toJSON()
       const book = s.bookSeries[bookIndex].book.toJSON()
       delete book.libraryItem
