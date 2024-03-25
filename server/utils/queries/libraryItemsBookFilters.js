@@ -658,9 +658,11 @@ module.exports = {
     let includeAttributes = [
       [Sequelize.literal('(SELECT max(mp.updatedAt) FROM bookSeries bs, mediaProgresses mp WHERE mp.mediaItemId = bs.bookId AND mp.userId = :userId AND bs.seriesId = series.id)'), 'recent_progress'],
     ]
-    let booksNotFinishedQuery = ``
+    let booksNotFinishedQuery = `(SELECT count(*) FROM bookSeries bs LEFT OUTER JOIN mediaProgresses mp ON mp.mediaItemId = bs.bookId AND mp.userId = :userId WHERE bs.seriesId = series.id AND (mp.isFinished = 0 OR mp.isFinished IS NULL))`
+
     if (library.settings.onlyShowLaterBooksInContinueSeries) {
       includeAttributes.push([Sequelize.literal('(SELECT CAST(max(bs.sequence) as FLOAT) FROM bookSeries bs, mediaProgresses mp WHERE mp.mediaItemId = bs.bookId AND mp.isFinished = 1 AND mp.userId = :userId AND bs.seriesId = series.id)'), 'maxSequence'])
+  
       booksNotFinishedQuery = booksNotFinishedQuery.slice(0, -1) + ` AND CAST(bs.sequence as FLOAT) > (SELECT CAST(max(bs.sequence) as FLOAT) FROM bookSeries bs, mediaProgresses mp WHERE mp.mediaItemId = bs.bookId AND mp.isFinished = 1 AND mp.userId = :userId AND bs.seriesId = series.id)` + `)`
     }
 
