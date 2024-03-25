@@ -702,7 +702,7 @@ module.exports = {
             [Sequelize.Op.or]: [null, 0]
           },
           'sequence': {
-            [Sequelize.Op.gte]: Sequelize.literal('maxSequence')
+            [Sequelize.Op.gte]: Sequelize.literal('CASt(maxSequence AS FLOAT)')
           }
         },
         include: {
