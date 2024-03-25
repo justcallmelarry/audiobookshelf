@@ -3,7 +3,6 @@ const Database = require('../../Database')
 const Logger = require('../../Logger')
 const authorFilters = require('./authorFilters')
 const { asciiOnlyToLowerCase } = require('../index')
-const Logger = require('./Logger')
 
 module.exports = {
   /**
