@@ -655,9 +655,11 @@ module.exports = {
     const userPermissionBookWhere = this.getUserPermissionBookWhereQuery(user)
     bookWhere.push(...userPermissionBookWhere.bookWhere)
 
-    let booksNotFinishedQuery = '(SELECT count(*) FROM bookSeries bs LEFT OUTER JOIN mediaProgresses mp ON mp.mediaItemId = bs.bookId AND mp.userId = :userId WHERE bs.seriesId = series.id AND (mp.isFinished = 0 OR mp.isFinished IS NULL))'
+    let includeAttributes = [
+      [Sequelize.literal('(SELECT max(mp.updatedAt) FROM bookSeries bs, mediaProgresses mp WHERE mp.mediaItemId = bs.bookId AND mp.userId = :userId AND bs.seriesId = series.id)'), 'recent_progress'],
+    ]
     if (library.settings.onlyShowLaterBooksInContinueSeries) {
-      booksNotFinishedQuery = booksNotFinishedQuery.slice(0, -1) + 'AND CAST(bs.sequence as FLOAT) > (SELECT CAST(max(bs.sequence) as FLOAT) FROM bookSeries bs, mediaProgresses mp WHERE mp.mediaItemId = bs.bookId AND mp.isFinished = 1 AND mp.userId = :userId AND bs.seriesId = series.id)' + ')'
+      includeAttributes.push([Sequelize.literal('(SELECT CAST(max(bs.sequence) as FLOAT) FROM bookSeries bs, mediaProgresses mp WHERE mp.mediaItemId = bs.bookId AND mp.isFinished = 1 AND mp.userId = :userId AND bs.seriesId = series.id)'), 'maxSequence'])
     }
 
     const { rows: series, count } = await Database.seriesModel.findAndCountAll({
@@ -673,15 +675,15 @@ module.exports = {
         Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM mediaProgresses mp, bookSeries bs WHERE bs.seriesId = series.id AND mp.mediaItemId = bs.bookId AND mp.userId = :userId AND mp.isFinished = 1)`), {
           [Sequelize.Op.gte]: 1
         }),
-        // Has at least 1 book not finished (including disqualifying lower sequence numbers if library if configured  that way)
-        Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM bookSeries bs LEFT OUTER JOIN mediaProgresses mp ON mp.mediaItemId = bs.bookId AND mp.userId = :userId WHERE bs.seriesId = series.id AND (mp.isFinished = 0 OR mp.isFinished IS NULL) AND CAST(bs.sequence as FLOAT) > (SELECT CAST(max(bs.sequence) as FLOAT) FROM bookSeries bs, mediaProgresses mp WHERE mp.mediaItemId = bs.bookId AND mp.isFinished = 1 AND mp.userId = :userId AND bs.seriesId = series.id))`), {
+        // Has at least 1 book not finished
+        Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM bookSeries bs LEFT OUTER JOIN mediaProgresses mp ON mp.mediaItemId = bs.bookId AND mp.userId = :userId WHERE bs.seriesId = series.id AND (mp.isFinished = 0 OR mp.isFinished IS NULL) AND CAST(bs.sequence as FLOAT) > maxSequence)`), {
           [Sequelize.Op.gte]: 1
         }),
         // Has no books in progress
-        Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM mediaProgresses mp, bookSeries bs WHERE mp.mediaItemId = bs.bookId AND mp.userId = :userId AND bs.seriesId = series.id AND mp.isFinished = 0 AND mp.currentTime > 0)`), 0)
+        Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM mediaProgresses mp, bookSeries bs WHERE mp.mediaItemId = bs.bookId AND mp.userId = :userId AND bs.seriesId = series.id AND mp.isFinished = 0 AND mp.currentTime > 0)`), 0),
       ],
       attributes: {
-        include: [Sequelize.literal('(SELECT max(mp.updatedAt) FROM bookSeries bs, mediaProgresses mp WHERE mp.mediaItemId = bs.bookId AND mp.userId = :userId AND bs.seriesId = series.id)'), 'recent_progress'],
+        include: includeAttributes
       },
       replacements: {
         userId: user.id,
@@ -736,13 +738,27 @@ module.exports = {
     const libraryItems = series.map(s => {
       if (!s.bookSeries.length) return null // this is only possible if user has restricted books in series
       
-      const libraryItem = s.bookSeries[0].book.libraryItem.toJSON()
-      const book = s.bookSeries[0].book.toJSON()
+      let bookIndex = 0
+      // if the library setting is toggled, only show later entries in series, otherwise skip
+      if (library.settings.onlyShowLaterBooksInContinueSeries) {
+        bookIndex = s.bookSeries.findIndex(function (b) {
+          return parseFloat(b.dataValues.sequence) > s.dataValues.maxSequence
+        })
+        if (bookIndex === -1) {
+          // no later books than maxSequence
+          Logger.debug(s.name + " no book")
+          return null
+        }
+      }
+      
+      Logger.debug(s.name + " " + bookIndex)
+      const libraryItem = s.bookSeries[bookIndex].book.libraryItem.toJSON()
+      const book = s.bookSeries[bookIndex].book.toJSON()
       delete book.libraryItem
       libraryItem.series = {
         id: s.id,
         name: s.name,
-        sequence: s.bookSeries[0].sequence
+        sequence: s.bookSeries[bookIndex].sequence
       }
       if (libraryItem.feeds?.length) {
         libraryItem.rssFeed = libraryItem.feeds[0]
