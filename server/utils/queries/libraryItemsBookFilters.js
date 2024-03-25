@@ -659,7 +659,7 @@ module.exports = {
       [Sequelize.literal('(SELECT max(mp.updatedAt) FROM bookSeries bs, mediaProgresses mp WHERE mp.mediaItemId = bs.bookId AND mp.userId = :userId AND bs.seriesId = series.id)'), 'recent_progress'],
     ]
     if (library.settings.onlyShowLaterBooksInContinueSeries) {
-      includeAttributes.push([Sequelize.literal('(SELECT CAST(max(bs.sequencze) as FLOAT) FROM bookSeries bs, mediaProgresses mp WHERE mp.mediaItemId = bs.bookId AND mp.isFinished = 1 AND mp.userId = :userId AND bs.seriesId = series.id)'), 'maxSequence'])
+      includeAttributes.push([Sequelize.literal('(SELECT CAST(max(bs.sequence) as FLOAT) FROM bookSeries bs, mediaProgresses mp WHERE mp.mediaItemId = bs.bookId AND mp.isFinished = 1 AND mp.userId = :userId AND bs.seriesId = series.id)'), 'maxSequence'])
     }
 
     const { rows: series, count } = await Database.seriesModel.findAndCountAll({
@@ -676,7 +676,7 @@ module.exports = {
           [Sequelize.Op.gte]: 1
         }),
         // Has at least 1 book not finished
-        Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM bookSeries bs LEFT OUTER JOIN mediaProgresses mp ON mp.mediaItemId = bs.bookId AND mp.userId = :userId WHERE bs.seriesId = series.id AND (mp.isFinished = 0 OR mp.isFinished IS NULL) AND bs.sequence > (SELECT CAST(max(bs.sequencze) as FLOAT) FROM bookSeries bs, mediaProgresses mp WHERE mp.mediaItemId = bs.bookId AND mp.isFinished = 1 AND mp.userId = :userId AND bs.seriesId = series.id))`), {
+        Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM bookSeries bs LEFT OUTER JOIN mediaProgresses mp ON mp.mediaItemId = bs.bookId AND mp.userId = :userId WHERE bs.seriesId = series.id AND (mp.isFinished = 0 OR mp.isFinished IS NULL))`), {
           [Sequelize.Op.gte]: 1
         }),
         // Has no books in progress
