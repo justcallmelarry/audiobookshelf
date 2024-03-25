@@ -7,7 +7,7 @@ const { asciiOnlyToLowerCase } = require('../index')
 module.exports = {
   /**
    * User permissions to restrict books for explicit content & tags
-   * @param {import('../../objects/user/User')} user
+   * @param {import('../../objects/user/User')} user 
    * @returns {{ bookWhere:Sequelize.WhereOptions, replacements:object }}
    */
   getUserPermissionBookWhereQuery(user) {
@@ -39,8 +39,8 @@ module.exports = {
   /**
    * When collapsing series and filtering by progress
    * different where options are required
-   *
-   * @param {string} value
+   * 
+   * @param {string} value 
    * @returns {Sequelize.WhereOptions}
    */
   getCollapseSeriesMediaProgressFilter(value) {
@@ -90,8 +90,8 @@ module.exports = {
 
   /**
    * Get where options for Book model
-   * @param {string} group
-   * @param {[string]} value
+   * @param {string} group 
+   * @param {[string]} value 
    * @returns {object} { Sequelize.WhereOptions, string[] }
    */
   getMediaGroupQuery(group, value) {
@@ -232,8 +232,8 @@ module.exports = {
 
   /**
    * Get sequelize order
-   * @param {string} sortBy
-   * @param {boolean} sortDesc
+   * @param {string} sortBy 
+   * @param {boolean} sortDesc 
    * @param {boolean} collapseseries
    * @returns {Sequelize.order}
    */
@@ -278,9 +278,9 @@ module.exports = {
    * When collapsing series get first book in each series
    * to know which books to exclude from primary query.
    * Additionally use this query to get the number of books in each series
-   *
-   * @param {Sequelize.ModelStatic} bookFindOptions
-   * @param {Sequelize.WhereOptions} seriesWhere
+   * 
+   * @param {Sequelize.ModelStatic} bookFindOptions 
+   * @param {Sequelize.WhereOptions} seriesWhere 
    * @returns {object} { booksToExclude, bookSeriesToInclude }
    */
   async getCollapseSeriesBooksToExclude(bookFindOptions, seriesWhere) {
@@ -332,16 +332,16 @@ module.exports = {
 
   /**
    * Get library items for book media type using filter and sort
-   * @param {string} libraryId
+   * @param {string} libraryId 
    * @param {[oldUser]} user
-   * @param {[string]} filterGroup
-   * @param {[string]} filterValue
-   * @param {string} sortBy
-   * @param {string} sortDesc
+   * @param {[string]} filterGroup 
+   * @param {[string]} filterValue 
+   * @param {string} sortBy 
+   * @param {string} sortDesc 
    * @param {boolean} collapseseries
    * @param {string[]} include
-   * @param {number} limit
-   * @param {number} offset
+   * @param {number} limit 
+   * @param {number} offset 
    * @param {boolean} isHomePage for home page shelves
    * @returns {object} { libraryItems:LibraryItem[], count:number }
    */
@@ -633,11 +633,11 @@ module.exports = {
    * 2. Has no books in progress
    * 3. Has at least 1 unfinished book
    * TODO: Reduce queries
-   * @param {import('../../objects/Library')} library
-   * @param {import('../../objects/user/User')} user
-   * @param {string[]} include
-   * @param {number} limit
-   * @param {number} offset
+   * @param {import('../../objects/Library')} library 
+   * @param {import('../../objects/user/User')} user 
+   * @param {string[]} include 
+   * @param {number} limit 
+   * @param {number} offset 
    * @returns {{ libraryItems:import('../../models/LibraryItem')[], count:number }}
    */
   async getContinueSeriesLibraryItems(library, user, include, limit, offset) {
@@ -662,7 +662,7 @@ module.exports = {
 
     if (library.settings.onlyShowLaterBooksInContinueSeries) {
       includeAttributes.push([Sequelize.literal('(SELECT CAST(max(bs.sequence) as FLOAT) FROM bookSeries bs, mediaProgresses mp WHERE mp.mediaItemId = bs.bookId AND mp.isFinished = 1 AND mp.userId = :userId AND bs.seriesId = series.id)'), 'maxSequence'])
-
+  
       booksNotFinishedQuery = booksNotFinishedQuery.slice(0, -1) + ` AND CAST(bs.sequence as FLOAT) > (SELECT CAST(max(bs.sequence) as FLOAT) FROM bookSeries bs, mediaProgresses mp WHERE mp.mediaItemId = bs.bookId AND mp.isFinished = 1 AND mp.userId = :userId AND bs.seriesId = series.id)` + `)`
     }
 
@@ -741,7 +741,7 @@ module.exports = {
 
     const libraryItems = series.map(s => {
       if (!s.bookSeries.length) return null // this is only possible if user has restricted books in series
-
+      
       let bookIndex = 0
       // if the library setting is toggled, only show later entries in series, otherwise skip
       if (library.settings.onlyShowLaterBooksInContinueSeries) {
@@ -754,7 +754,7 @@ module.exports = {
           return null
         }
       }
-
+      
       Logger.debug(s.name + " " + bookIndex)
       const libraryItem = s.bookSeries[bookIndex].book.libraryItem.toJSON()
       const book = s.bookSeries[bookIndex].book.toJSON()
@@ -781,10 +781,10 @@ module.exports = {
    * Get book library items for the "Discover" shelf
    * Random selection of books that are not started
    *  - only includes the first book of a not-started series
-   * @param {string} libraryId
-   * @param {oldUser} user
-   * @param {string[]} include
-   * @param {number} limit
+   * @param {string} libraryId 
+   * @param {oldUser} user 
+   * @param {string[]} include 
+   * @param {number} limit 
    * @returns {object} {libraryItems:LibraryItem, count:number}
    */
   async getDiscoverLibraryItems(libraryId, user, include, limit) {
@@ -914,7 +914,7 @@ module.exports = {
 
   /**
    * Get book library items in a collection
-   * @param {oldCollection} collection
+   * @param {oldCollection} collection 
    * @returns {Promise<LibraryItem[]>}
    */
   async getLibraryItemsForCollection(collection) {
@@ -958,8 +958,8 @@ module.exports = {
 
   /**
    * Get library items for series
-   * @param {import('../../objects/entities/Series')} oldSeries
-   * @param {import('../../objects/user/User')} [oldUser]
+   * @param {import('../../objects/entities/Series')} oldSeries 
+   * @param {import('../../objects/user/User')} [oldUser] 
    * @returns {Promise<import('../../objects/LibraryItem')[]>}
    */
   async getLibraryItemsForSeries(oldSeries, oldUser) {
@@ -970,10 +970,10 @@ module.exports = {
   /**
    * Search books, authors, series
    * @param {import('../../objects/user/User')} oldUser
-   * @param {import('../../objects/Library')} oldLibrary
-   * @param {string} query
-   * @param {number} limit
-   * @param {number} offset
+   * @param {import('../../objects/Library')} oldLibrary 
+   * @param {string} query 
+   * @param {number} limit 
+   * @param {number} offset 
    * @returns {{book:object[], narrators:object[], authors:object[], tags:object[], series:object[]}}
    */
   async search(oldUser, oldLibrary, query, limit, offset) {
@@ -1152,7 +1152,7 @@ module.exports = {
 
   /**
    * Genres with num books
-   * @param {string} libraryId
+   * @param {string} libraryId 
    * @returns {{genre:string, count:number}[]}
    */
   async getGenresWithCount(libraryId) {
@@ -1174,7 +1174,7 @@ module.exports = {
 
   /**
    * Get stats for book library
-   * @param {string} libraryId
+   * @param {string} libraryId 
    * @returns {Promise<{ totalSize:number, totalDuration:number, numAudioFiles:number, totalItems:number}>}
    */
   async getBookLibraryStats(libraryId) {
@@ -1188,8 +1188,8 @@ module.exports = {
 
   /**
    * Get longest books in library
-   * @param {string} libraryId
-   * @param {number} limit
+   * @param {string} libraryId 
+   * @param {number} limit 
    * @returns {Promise<{ id:string, title:string, duration:number }[]>}
    */
   async getLongestBooks(libraryId, limit) {
