@@ -743,17 +743,17 @@ module.exports = {
       if (!s.bookSeries.length) return null // this is only possible if user has restricted books in series
       
       let bookIndex = 0
-      // if the library setting is toggled, only show later entries in series, otherwise skip
-      if (library.settings.onlyShowLaterBooksInContinueSeries) {
-        bookIndex = s.bookSeries.findIndex(function (b) {
-          return parseFloat(b.dataValues.sequence) > s.dataValues.maxSequence
-        })
-        if (bookIndex === -1) {
-          // no later books than maxSequence
-          Logger.debug(s.name + " no book")
-          return null
-        }
-      }
+      // // if the library setting is toggled, only show later entries in series, otherwise skip
+      // if (library.settings.onlyShowLaterBooksInContinueSeries) {
+      //   bookIndex = s.bookSeries.findIndex(function (b) {
+      //     return parseFloat(b.dataValues.sequence) > s.dataValues.maxSequence
+      //   })
+      //   if (bookIndex === -1) {
+      //     // no later books than maxSequence
+      //     Logger.debug(s.name + " no book")
+      //     return null
+      //   }
+      // }
       
       Logger.debug(s.name + " " + bookIndex)
       const libraryItem = s.bookSeries[bookIndex].book.libraryItem.toJSON()
