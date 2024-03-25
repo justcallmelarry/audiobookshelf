@@ -674,7 +674,7 @@ module.exports = {
           [Sequelize.Op.gte]: 1
         }),
         // Has at least 1 book not finished (including disqualifying lower sequence numbers if library if configured  that way)
-        Sequelize.where(Sequelize.literal(booksNotFinishedQuery), {
+        Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM bookSeries bs LEFT OUTER JOIN mediaProgresses mp ON mp.mediaItemId = bs.bookId AND mp.userId = :userId WHERE bs.seriesId = series.id AND (mp.isFinished = 0 OR mp.isFinished IS NULL) AND CAST(bs.sequence as FLOAT) > (SELECT CAST(max(bs.sequence) as FLOAT) FROM bookSeries bs, mediaProgresses mp WHERE mp.mediaItemId = bs.bookId AND mp.isFinished = 1 AND mp.userId = :userId AND bs.seriesId = series.id))`), {
           [Sequelize.Op.gte]: 1
         }),
         // Has no books in progress
