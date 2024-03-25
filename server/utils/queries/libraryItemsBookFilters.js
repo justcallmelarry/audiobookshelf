@@ -676,7 +676,7 @@ module.exports = {
           [Sequelize.Op.gte]: 1
         }),
         // Has at least 1 book not finished
-        Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM bookSeries bs LEFT OUTER JOIN mediaProgresses mp ON mp.mediaItemId = bs.bookId AND mp.userId = :userId WHERE bs.seriesId = series.id AND (mp.isFinished = 0 OR mp.isFinished IS NULL))`), {
+        Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM bookSeries bs LEFT OUTER JOIN mediaProgresses mp ON mp.mediaItemId = bs.bookId AND mp.userId = :userId WHERE bs.seriesId = series.id AND (mp.isFinished = 0 OR mp.isFinished IS NULL) AND bs.sequence > maxSequence)`), {
           [Sequelize.Op.gte]: 1
         }),
         // Has no books in progress
@@ -700,9 +700,6 @@ module.exports = {
         where: {
           '$book.mediaProgresses.isFinished$': {
             [Sequelize.Op.or]: [null, 0]
-          },
-          'sequence': {
-            [Sequelize.Op.gte]: Sequelize.literal('CASt(maxSequence AS FLOAT)')
           }
         },
         include: {
