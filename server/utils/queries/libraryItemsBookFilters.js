@@ -3,6 +3,7 @@ const Database = require('../../Database')
 const Logger = require('../../Logger')
 const authorFilters = require('./authorFilters')
 const { asciiOnlyToLowerCase } = require('../index')
+const Logger = require('./Logger')
 
 module.exports = {
   /**
@@ -737,7 +738,7 @@ module.exports = {
 
     const libraryItems = series.map(s => {
       if (!s.bookSeries.length) return null // this is only possible if user has restricted books in series
-
+      
       let bookIndex = 0
       // if the library setting is toggled, only show later entries in series, otherwise skip
       if (library.settings.onlyShowLaterBooksInContinueSeries) {
@@ -746,10 +747,12 @@ module.exports = {
         })
         if (bookIndex === -1) {
           // no later books than maxSequence
+          Logger.debug(s.name + " no book")
           return null
         }
       }
-
+      
+      Logger.debug(s.name + " " + bookIndex)
       const libraryItem = s.bookSeries[bookIndex].book.libraryItem.toJSON()
       const book = s.bookSeries[bookIndex].book.toJSON()
       delete book.libraryItem
